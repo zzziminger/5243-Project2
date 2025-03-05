@@ -27,7 +27,7 @@ ui <- fluidPage(
   # File input for uploading data
   sidebarLayout(
     sidebarPanel(
-      fileInput("file1", "Choose data File", accept = c(".csv", ".txt", ".tsv", ".xlsx", ".json", ".rdf")),
+      fileInput("file1", "Choose a Data File", accept = c(".csv", ".txt", ".tsv", ".xlsx", ".json", ".rdf")),
       tags$hr(),
       
       # Dropdown for built-in datasets
