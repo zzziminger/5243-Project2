@@ -7,6 +7,8 @@ library(jsonlite)
 library(rdflib)
 library(MASS)         # For Box-Cox transformation
 library(bestNormalize) # For Yeo-Johnson transformation
+library(ggplot2) 
+library(plotly) # For interactive plots (EDA)
 
 options(shiny.maxRequestSize = 100 * 1024^2)  
 
@@ -63,11 +65,16 @@ ui <- fluidPage(
       tabsetPanel(
         tabPanel("Raw Data Preview", tableOutput("contents")),
         tabPanel("Cleaned Data Preview", DTOutput("cleaned_table")),
-        tabPanel("Feature Engineered Data", DTOutput("fe_table"))
+        tabPanel("Feature Engineered Data", DTOutput("fe_table")),
+        tabPanel("Exploratory Data Analysis", 
+                 uiOutput("eda_controls"),
+                 plotOutput("eda_plot"),
+                 verbatimTextOutput("summary_stats")
       )
     )
   )
 )
+
 
 # Define the server logic
 server <- function(input, output, session) {
@@ -205,6 +212,126 @@ server <- function(input, output, session) {
     req(engineered_data())
     datatable(engineered_data(), options = list(autoWidth = TRUE))
   })
+  
+  # --------------
+  #  EDA Controls
+  # --------------
+  output$eda_controls <- renderUI({
+    req(engineered_data())
+    df <- engineered_data()
+    
+    fluidRow(
+      column(4,
+             selectInput("eda_var_x", "Select X Variable", choices = names(df)),
+             selectInput("eda_var_y", "Select Y Variable (Optional)", choices = c("None", names(df))),
+             selectInput("eda_plot_type", "Select Plot Type", 
+                         choices = c("Histogram", "Boxplot", "Scatter Plot", "Bar Plot"))
+      ),
+      column(4,
+             checkboxInput("eda_add_filter", "Enable Filter?", value = FALSE),
+             conditionalPanel(
+               condition = "input.eda_add_filter == true",
+               selectInput("eda_filter_col", "Filter Column", choices = names(df)),
+               uiOutput("eda_filter_values")
+             )
+      )
+    )
+  })
+  
+  # For dynamic filter options
+  output$eda_filter_values <- renderUI({
+    req(input$eda_filter_col)
+    df <- engineered_data()
+    
+    vals <- unique(df[[input$eda_filter_col]])
+    
+    if (is.numeric(df[[input$eda_filter_col]])) {
+      sliderInput("eda_filter_range", "Select Range", 
+                  min = min(vals, na.rm = TRUE), max = max(vals, na.rm = TRUE),
+                  value = c(min(vals, na.rm = TRUE), max(vals, na.rm = TRUE)))
+    } else {
+      selectInput("eda_filter_vals", "Select Values", choices = vals, multiple = TRUE)
+    }
+  })
+  
+  # Apply filtered data
+  eda_filtered_data <- reactive({
+    df <- engineered_data()
+    
+    if (input$eda_add_filter) {
+      col <- input$eda_filter_col
+      if (is.numeric(df[[col]])) {
+        rng <- input$eda_filter_range
+        df <- df %>% filter(df[[col]] >= rng[1], df[[col]] <= rng[2])
+      } else {
+        vals <- input$eda_filter_vals
+        df <- df %>% filter(df[[col]] %in% vals)
+      }
+    }
+    
+    df
+  })
+  
+  # Render plot from user selection
+  output$eda_plot <- renderPlot({
+    req(eda_filtered_data())
+    df <- eda_filtered_data()
+    x <- input$eda_var_x
+    y <- input$eda_var_y
+    plot_type <- input$eda_plot_type
+    
+    if (plot_type == "Histogram") {
+      hist(df[[x]], main = paste("Histogram of", x), xlab = x, col = "skyblue", border = "white")
+    }
+    
+    if (plot_type == "Boxplot") {
+      boxplot(df[[x]], main = paste("Boxplot of", x), xlab = x, col = "lightgreen")
+    }
+    
+    if (plot_type == "Scatter Plot" && y != "None") {
+      plot(df[[x]], df[[y]], main = paste("Scatter Plot of", x, "vs", y), xlab = x, ylab = y, pch = 19, col = "tomato")
+    }
+    
+    if (plot_type == "Bar Plot") {
+      barplot(table(df[[x]]), main = paste("Bar Plot of", x), col = "steelblue")
+    }
+  })
+
+  # Interactive plots
+  output$eda_plot <- renderPlotly({
+    req(eda_filtered_data())
+    df <- eda_filtered_data()
+    x <- input$eda_var_x
+    y <- input$eda_var_y
+    plot_type <- input$eda_plot_type
+    
+    if (plot_type == "Histogram") {
+      plot_ly(df, x = ~get(x), type = "histogram")
+    }
+    
+    if (plot_type == "Boxplot") {
+      plot_ly(df, y = ~get(x), type = "box")
+    }
+    
+    if (plot_type == "Scatter Plot" && y != "None") {
+      plot_ly(df, x = ~get(x), y = ~get(y), type = "scatter", mode = "markers")
+    }
+    
+    if (plot_type == "Bar Plot") {
+      plot_ly(df, x = ~get(x), type = "bar")
+    }
+  })
+  
+  # Render summary statistics
+  output$summary_stats <- renderPrint({
+    req(eda_filtered_data())
+    df <- eda_filtered_data()
+    
+    summary(df)
+  })
+
+  # --- End of EDA Controls ---
+
 }
 
 # Run the application 
