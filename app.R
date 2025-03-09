@@ -69,7 +69,7 @@ ui <- fluidPage(
         tabPanel("Exploratory Data Analysis", 
                  uiOutput("eda_controls"),
                  plotOutput("eda_plot"),
-                 verbatimTextOutput("summary_stats")
+                 verbatimTextOutput("summary_stats"))
       )
     )
   )
