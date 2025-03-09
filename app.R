@@ -68,7 +68,7 @@ ui <- fluidPage(
         tabPanel("Feature Engineered Data", DTOutput("fe_table")),
         tabPanel("Exploratory Data Analysis", 
                  uiOutput("eda_controls"),
-                 plotOutput("eda_plot"),
+                 plotlyOutput("eda_plot"),
                  verbatimTextOutput("summary_stats"))
       )
     )
@@ -271,55 +271,55 @@ server <- function(input, output, session) {
     
     df
   })
-  
-  # Render plot from user selection
-  output$eda_plot <- renderPlot({
-    req(eda_filtered_data())
-    df <- eda_filtered_data()
-    x <- input$eda_var_x
-    y <- input$eda_var_y
-    plot_type <- input$eda_plot_type
-    
-    if (plot_type == "Histogram") {
-      hist(df[[x]], main = paste("Histogram of", x), xlab = x, col = "skyblue", border = "white")
-    }
-    
-    if (plot_type == "Boxplot") {
-      boxplot(df[[x]], main = paste("Boxplot of", x), xlab = x, col = "lightgreen")
-    }
-    
-    if (plot_type == "Scatter Plot" && y != "None") {
-      plot(df[[x]], df[[y]], main = paste("Scatter Plot of", x, "vs", y), xlab = x, ylab = y, pch = 19, col = "tomato")
-    }
-    
-    if (plot_type == "Bar Plot") {
-      barplot(table(df[[x]]), main = paste("Bar Plot of", x), col = "steelblue")
-    }
-  })
 
-  # Interactive plots
   output$eda_plot <- renderPlotly({
-    req(eda_filtered_data())
+    req(eda_filtered_data())  # check
+    
     df <- eda_filtered_data()
     x <- input$eda_var_x
     y <- input$eda_var_y
     plot_type <- input$eda_plot_type
     
+    # Safety checks
+    if (is.null(x) || x == "") {
+      return(NULL)
+    }
+    if (is.null(y) || y == "") {
+      y <- "None"
+    }
+    
+    p <- NULL
+    
+    # Plot types
     if (plot_type == "Histogram") {
-      plot_ly(df, x = ~get(x), type = "histogram")
+      p <- ggplot(df, aes_string(x = x)) + 
+        geom_histogram(fill = "steelblue", color = "white") + 
+        theme_minimal()
     }
     
     if (plot_type == "Boxplot") {
-      plot_ly(df, y = ~get(x), type = "box")
+      p <- ggplot(df, aes_string(y = x)) + 
+        geom_boxplot(fill = "orange") + 
+        theme_minimal()
     }
     
-    if (plot_type == "Scatter Plot" && y != "None") {
-      plot_ly(df, x = ~get(x), y = ~get(y), type = "scatter", mode = "markers")
+    if (plot_type == "Scatter Plot" && !is.null(y) && y != "None") {
+      p <- ggplot(df, aes_string(x = x, y = y)) + 
+        geom_point(color = "tomato") + 
+        theme_minimal()
     }
     
     if (plot_type == "Bar Plot") {
-      plot_ly(df, x = ~get(x), type = "bar")
+      p <- ggplot(df, aes_string(x = x)) + 
+        geom_bar(fill = "skyblue") + 
+        theme_minimal()
     }
+    
+    if (is.null(p)) {
+      return(NULL)
+    }
+    
+    ggplotly(p)
   })
   
   # Render summary statistics
