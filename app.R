@@ -9,6 +9,7 @@ library(MASS)         # For Box-Cox transformation
 library(bestNormalize) # For Yeo-Johnson transformation
 library(ggplot2) 
 library(plotly) # For interactive plots (EDA)
+library(shinyBS) # For tooltips
 
 options(shiny.maxRequestSize = 100 * 1024^2)  
 
@@ -26,20 +27,28 @@ data_cleaning <- function(df) {
 
 # Define the UI
 ui <- fluidPage(
-  titlePanel("Upload, Clean, and Engineer Features"),
-  
+  titlePanel("Data Processing App"),
   sidebarLayout(
     sidebarPanel(
-      fileInput("file1", "Choose a Data File", 
-                accept = c(".csv", ".txt", ".tsv", ".xlsx", ".json", ".rdf")),
+      div(id = "file_upload_container",
+          fileInput("file1", "Choose a Data File", 
+                    accept = c(".csv", ".txt", ".tsv", ".xlsx", ".json", ".rdf"))),
+      bsTooltip("file_upload_container", 
+                "Upload a dataset in CSV, TXT, TSV, Excel, JSON, or RDF format.", 
+                placement = "right", 
+                trigger = "hover"),
       selectInput("dataset", "Or choose a built-in dataset:",
                   choices = c("None", "mtcars", "iris"),
                   selected = "None"),
+      bsTooltip("dataset", "Select a pre-loaded dataset for analysis.", placement = "right", trigger = "hover"),
       actionButton("clean_data", "Clean Data"),
+      bsTooltip("clean_data", "Click to clean the dataset (removes duplicates, imputes missing values, etc.).", placement = "right", trigger = "hover"),
       tags$hr(),
       
       h4("Numeric Feature Engineering"),
       uiOutput("fe_num_column_ui"),
+      bsTooltip("fe_num_column_ui", "Select a numeric column to apply a transformation.",
+                placement = "right", trigger = "hover"),
       radioButtons("transformation_numeric", "Select Numeric Transformation:",
                    choices = c("Logarithm" = "log", 
                                "Square Root" = "sqrt", 
@@ -48,8 +57,14 @@ ui <- fluidPage(
                                "Box-Cox" = "boxcox",
                                "Yeo-Johnson" = "yeojohnson",
                                "Min-Max Normalization" = "minmax")),
+      bsTooltip("transformation_numeric", "Choose a transformation for numeric features.",
+                placement = "right", trigger = "hover"),
       textInput("num_new_col_name", "New Column Name", value = "new_feature"),
+      bsTooltip("num_new_col_name", "Enter a name for the newly created numeric feature.",
+                placement = "right", trigger = "hover"),
       actionButton("apply_numeric", "Apply Numeric Transformation"),
+      bsTooltip("apply_numeric", "Click to apply the selected numeric transformation to the chosen column.",
+                placement = "right", trigger = "hover"),
       tags$hr(),
       
       h4("Categorical Feature Engineering"),
@@ -57,12 +72,63 @@ ui <- fluidPage(
       radioButtons("cat_transformation", "Select Categorical Transformation:",
                    choices = c("One-Hot Encoding" = "onehot", 
                                "Dummy Encoding" = "dummy")),
+      bsTooltip("cat_transformation", "Choose a method for encoding categorical variables.",
+                placement = "right", trigger = "hover"),
       textInput("cat_new_prefix", "New Column Prefix", value="oh"),
-      actionButton("apply_categorical", "Apply Categorical Transformation")
-    ),
+      bsTooltip("cat_new_prefix", "Enter a prefix for the new categorical feature columns.",
+                placement = "right", trigger = "hover"),
+      actionButton("apply_categorical", "Apply Categorical Transformation"),
+      bsTooltip("apply_categorical", "Click to apply the selected categorical transformation to the chosen column.",
+              placement = "right", trigger = "hover")),
     
     mainPanel(
       tabsetPanel(
+        tabPanel("User Guide", 
+                 h3("Welcome to the Data Processing App"),
+                 p("This app allows you to upload, clean, and engineer features to explore your dataset interactively."),
+                 h4("How to Use the App"),
+                 tags$ul(
+                   tags$li("Upload your dataset or choose a built-in one."),
+                   tags$li("Click 'Clean Data' to remove duplicates and handle missing values."),
+                   tags$li("Use 'Feature Engineering' options to transform numerical and categorical variables."),
+                   tags$li("Explore data with visualizations in the 'Exploratory Data Analysis' tab.")
+                 ),
+                 h4("Supported File Formats"),
+                 tags$ul(
+                   tags$li("CSV, TXT, TSV"),
+                   tags$li("Excel (XLSX)"),
+                   tags$li("JSON"),
+                   tags$li("RDF")
+                 ),
+                 h4("Feature Engineering"),
+                 p("You can apply transformations to numerical and categorical features for better model performance."),
+                 h5("Numeric Transformations"),
+                 tags$ul(
+                   tags$li("Logarithm: Converts a numeric column to its logarithmic scale."),
+                   tags$li("Square Root: Computes the square root of a numeric column."),
+                   tags$li("Square: Raises a numeric column to the power of 2."),
+                   tags$li("Difference from Mean: Computes the difference between each value and the column mean."),
+                   tags$li("Box-Cox: A power transformation for stabilizing variance (only for positive values)."),
+                   tags$li("Yeo-Johnson: A transformation similar to Box-Cox, but works with all real values."),
+                   tags$li("Min-Max Normalization: Scales values between 0 and 1.")
+                 ),
+                 h5("Categorical Transformations"),
+                 tags$ul(
+                   tags$li("One-Hot Encoding: Creates binary columns for each unique category."),
+                   tags$li("Dummy Encoding: Similar to One-Hot Encoding but drops one category to avoid collinearity.")
+                 ),
+                 h4("Exploratory Data Analysis"),
+                 p("The Exploratory Data Analysis section helps you visualize and summarize the dataset."),
+                 h5("Available Visualizations"),
+                 tags$ul(
+                   tags$li("Histogram: Displays the distribution of a single numerical variable."),
+                   tags$li("Boxplot: Shows the spread, median, and potential outliers of a numerical variable."),
+                   tags$li("Scatter Plot: Visualizes relationships between two numerical variables."),
+                   tags$li("Bar Plot: Compares counts or frequencies of different categorical values.")
+                 ),
+                 h5("Filtering Options"),
+                 p("You can filter the data before plotting by selecting specific numeric ranges or categorical values.")
+        ),
         tabPanel("Raw Data Preview", tableOutput("contents")),
         tabPanel("Cleaned Data Preview", DTOutput("cleaned_table")),
         tabPanel("Feature Engineered Data", DTOutput("fe_table")),
