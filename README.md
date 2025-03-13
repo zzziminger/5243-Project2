@@ -1,9 +1,37 @@
-# 5243-Project2
+# README: R Shiny Data Processing Application
+## Overview
+This R Shiny application allows users to upload, clean, engineer features, and perform exploratory data analysis (EDA) on datasets. Users can upload files in multiple formats, apply data cleaning operations, transform numerical and categorical variables, and visualize data interactively.
+## Features
+- User Guide: A built-in guide provides clear instructions and tooltips to assist users in navigating the app.
+- Upload Datasets: Supports CSV, TXT, TSV, Excel, JSON, and RDF file formats, or select built-in datasets (`mtcars`, `iris`).
+- Data Cleaning: Removes duplicates, imputes missing values, standardizes column names, encodes categorical variables, and scales numerical features.
+- Feature Engineering:
 
-To use the app, users can either upload a file by clicking on the "Choose a Data File" button, which supports multiple formats such as CSV, TXT, TSV, Excel, JSON, and RDF, or select one of the built-in datasets, such as "mtcars" or "iris", from the dropdown menu. Once a file is uploaded or a dataset is selected, the app will display a preview of the first 10 rows of the dataset in a table format. (The maximum file size for uploads is 100MB)
+  Numeric Transformations: Logarithm, Square Root, Square, Difference from Mean, Box-Cox, Yeo-Johnson, Min-Max Normalization.
 
-Data cleaning: This section of the R Shiny app handles data cleaning and preprocessing by allowing users to upload datasets in various formats or select built-in ones. The cleaning process includes removing duplicate rows, imputing missing values (median for numeric variables and mode for categorical ones), standardizing column names, encoding categorical variables as factors, and scaling numerical features. An interactive interface enables users to preview both raw and cleaned data dynamically, ensuring consistency and readiness for further analysis.
+  Categorical Transformations: One-Hot Encoding, Dummy Encoding.
+- Exploratory Data Analysis (EDA): Generates interactive plots (histograms, boxplots, scatter plots, bar plots) and displays summary statistics.
+## Prerequisites
+Ensure you have R and the following R packages installed:
 
-Feature Engineering: This section of the application includes an interactive feature engineering module. For numeric data, users can apply transformations such as logarithm, square root, square, difference from the mean, Box‑Cox, Yeo‑Johnson, and min‑max normalization to address issues like skewness and scaling. For categorical data, the tool now offers one‑hot and dummy encoding, with custom naming that inserts an underscore between the variable name and its level. All transformations update the dataset dynamically, allowing users to iteratively modify features and immediately view the impact of these changes.
+`install.packages(c("shiny", "dplyr", "tidyr", "DT", "readxl", "jsonlite", "rdflib", "MASS", "bestNormalize", "ggplot2", "plotly", "shinyBS"))`
+## How to Run the Application
+### Clone the Repository
+`git clone <repository-url>`
 
-Exploratory Data Analysis: This section of the R Shiny app provides input options to explore and visualize data interactively. After cleaning and preprocessing a dataset, users can navigate to the "Exploratory Data Analysis" tab to generate visual summaries. The EDA functionality includes the ability to select variables and generate different types of plots such as histograms, boxplots, scatter plots, and bar plots. Users can specify an X variable (required) and an optional Y variable for certain plot types. The app supports interactive filtering, allowing users to focus on specific subsets of the data by selecting ranges for numeric variables or categories for categorical variables. Visualizations are rendered using Plotly, providing interactive features such as zooming and tooltips. In addition to the plots, users can view summary statistics for the filtered data, including measures like mean, median, and frequency counts. This interactive interface allows users to explore their data and analyze trends, patterns, and potential outliers.
+`cd <repository-folder>`
+### Open R or RStudio
+### Run the App
+`library(shiny)`
+
+`runApp("app.R")`
+### Access the App
+- Once the app is running, it will open in your default web browser.
+- Follow the User Guide tab for instructions on using the app.
+## File Upload Instructions
+- The maximum file size for uploads is 100MB.
+- Ensure the dataset is properly formatted and does not contain corrupted values.
+## Troubleshooting
+- If dependencies are missing, reinstall them using:
+  `install.packages("package-name")`
+- If the app does not start, check for any error messages in the R console
